@@ -39,7 +39,7 @@ namespace SqlDependencySorter
             }
 
 
-            list = list.OrderBy(x=> x.ObjectType).OrderBy(x => x.DependOnObject.Count).ThenBy(x => x.Name).ToList();
+            list = list.OrderBy(x=> x.ObjectType).ThenBy(x => x.DependOnObject.Count).ThenBy(x => x.Name).ToList();
 
             list = Sort(list);
 
@@ -131,7 +131,7 @@ namespace SqlDependencySorter
 
             foreach (var item in list)
             {
-                if (text.Contains(item.Name))
+                if (text.Contains(item.Name) && item.Name != obj.Name)
                 {
                     obj.DependOnObject.Add(item);
                 }
@@ -158,9 +158,9 @@ namespace SqlDependencySorter
                     if (i != newIdx)
                     {
                         var moveItem = list[i];
-                        list.RemoveAt(i);
                         list.Insert(newIdx, moveItem);
-
+                        list.RemoveAt(i);
+i --;
                     }
                 }
             }
