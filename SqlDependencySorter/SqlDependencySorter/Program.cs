@@ -13,20 +13,21 @@ namespace SqlDependencySorter
         {
             if (args.Length > 0)
             {
-                if (args[0] == "--gen_setting")
+                if (args.Contains("--g"))
                 {
                     new Setting().Save();
                     Console.WriteLine("sample setting file is generated.");
                     return;
                 }
-                else if (args[0] == "--help")
+                else if (args.Contains("--help") || args.Contains("/?"))
                 {
                     Console.WriteLine(
-                        "---------------------------------------------------------\n" +
-                        "                    SqlDependencySorter\n" +
-                        "---------------------------------------------------------\n" +
+                        "Sort DDL files and merge a file.\n" +
+                        "\n" +
+                        "SqlDependencySorter [--g] [-c] [--help] [/?]"+
                         "options: \n" +
-                        "          --gen_setting: generate sample setting file\n" +
+                        "          --g: generate sample setting file.\n" +
+                        "          --c: exit application without waiting for user key input.\n" +
                         "" +
                         "" +
                         "");
@@ -45,7 +46,10 @@ namespace SqlDependencySorter
             {
                 Console.WriteLine("setting file is not found.\n" +
                     "please run with --gen_setting option.");
-                Console.ReadKey();
+                if (!args.Contains("--c"))
+                {
+                    Console.ReadKey();
+                }
             }
         }
     }

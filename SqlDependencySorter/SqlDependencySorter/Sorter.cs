@@ -39,7 +39,7 @@ namespace SqlDependencySorter
             }
 
 
-            list = list.OrderBy(x=> x.ObjectType).ThenBy(x => x.DependOnObject.Count).ThenBy(x => x.Name).ToList();
+            list = list.OrderBy(x => x.ObjectType).ThenBy(x => x.DependOnObject.Count).ThenBy(x => x.Name).ToList();
 
             list = Sort(list);
 
@@ -47,10 +47,12 @@ namespace SqlDependencySorter
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < list.Count; i++)
             {
+                Console.WriteLine(list[i].DeclaredFilePath);
                 sb.AppendLine(File.ReadAllText(list[i].DeclaredFilePath));
             }
 
             string path = System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), $"combinedfile{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.sql");
+
 
             File.WriteAllText(path, sb.ToString());
 
@@ -69,7 +71,7 @@ namespace SqlDependencySorter
 
                 if (upperLine.Contains("DROP ")) { continue; }
 
-                if (upperLine.Contains("CREATE "))
+                if (upperLine.Contains("CREATE ") || upperLine.Contains("OR REPLACE "))
                 {
                     DbObjectTypes t = DbObjectTypes.View;
                     if (upperLine.Contains(" VIEW "))
@@ -78,7 +80,7 @@ namespace SqlDependencySorter
                         int startIdx = upperLine.IndexOf(TYPE_TEXT) + TYPE_TEXT.Length;
 
                         int endIdx = upperLine.IndexOf(" AS ", startIdx);
-
+                        if (endIdx == -1) { endIdx = upperLine.Length; }
                         string viewName = line.Substring(startIdx, endIdx - startIdx).Trim();
                         list.Add(new DbObject { ObjectType = DbObjectTypes.View, Name = viewName, DeclaredFilePath = filePath });
 
@@ -118,8 +120,6 @@ namespace SqlDependencySorter
 
                 }
 
-
-
             }
 
             return list;
@@ -152,7 +152,7 @@ namespace SqlDependencySorter
                         int idx = list.FindIndex(x => x.Name == item.Name);
                         if (idx > newIdx)
                         {
-                            newIdx = idx;
+                            newIdx = idx + 1;
                         }
                     }
                     if (i != newIdx)
@@ -160,7 +160,7 @@ namespace SqlDependencySorter
                         var moveItem = list[i];
                         list.Insert(newIdx, moveItem);
                         list.RemoveAt(i);
-i --;
+                        i--;
                     }
                 }
             }
