@@ -8,16 +8,19 @@ namespace SqlDependencySorter
 {
 
 
-    public class DbObject
+    internal class DbObject
     {
+ 
+        public string DeclaredFilePath { get; set; }
 
-        public string DeclaredFilePath { get; set; } = "";
-
-        public string Name { get; set; } = "";
+        public string Name { get; set; }
 
         public DbObjectTypes ObjectType { get; set; }
 
         public List<DbObject> DependOnObject { get;set; } = new List<DbObject>();
+
+        
+
 
     }
 }

@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SqlDependencySorter
 {
@@ -16,41 +14,19 @@ namespace SqlDependencySorter
         public static string Run(Setting s)
         {
 
-            var files = GetFiles(s);
-
-            var list = SortSql(files);
-
-            return WriteFile(files, list);
-
-        }
-
-        public static List<(string fileName, Encoding? encoding)> GetFiles(Setting s)
-        {
-            EncodingAutoDetection.EncodingDetector encodingDetector = new EncodingAutoDetection.EncodingDetector();
-
-            List<(string fileName, Encoding? encoding)> files = new List<(string, Encoding?)>();
+            List<string> files = new List<string>();
             foreach (var directory in s.Directories)
             {
-                files.AddRange(Directory.GetFiles(directory, s.Pattern, s.Option).Select(x => (x, encodingDetector.GetFileEncoding(x))));
+                files.AddRange(Directory.GetFiles(directory, s.Pattern, s.Option));
             }
-
-            return files;
-        }
-
-        public static List<DbObject> SortSql(List<(string fileName, Encoding? encoding)> files)
-        {
 
             List<DbObject> list = new List<DbObject>();
 
-
-
             foreach (var file in files)
             {
-                if (file.encoding != null)
-                {
-                    var lines = File.ReadAllLines(file.fileName, file.encoding);
-                    list.AddRange(ReadSqlFile(lines, file.fileName));
-                }
+                var lines = File.ReadAllLines(file, Encoding.UTF8);
+
+                list.AddRange(ReadSqlFile(lines, file));
             }
 
             Console.WriteLine(list.Count);
@@ -58,54 +34,36 @@ namespace SqlDependencySorter
 
             foreach (var file in files)
             {
-                if (file.encoding != null)
+                //EncodingAutoDetection
+                 var text = File.ReadAllText(file, Encoding.UTF8).Trim();
+                if (!text.EndsWith(";"))
                 {
-                    var text = File.ReadAllText(file.fileName, file.encoding).Trim();
-
-                    AnalyzeContainsObject(file.fileName, text, ref list);
+                    text += ";";
                 }
+                AnalyzeContainsObject(file, text, ref list);
             }
 
 
             list = list.OrderBy(x => x.ObjectType).ThenBy(x => x.DependOnObject.Count).ThenBy(x => x.Name).ToList();
 
             list = Sort(list);
-            return list;
-        }
 
-        public static string WriteFile(List<(string fileName, Encoding? encoding)> files, List<DbObject> list)
-        {
+
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("SET CLIENT_ENCODING TO \"UTF-8\"");
             for (int i = 0; i < list.Count; i++)
             {
-                var fileObj = files.First(x => x.fileName == list[i].DeclaredFilePath);
-
-                Console.WriteLine(fileObj.fileName);
-
-                var fileText = File.ReadAllText(fileObj.fileName, fileObj.encoding ?? Encoding.UTF8);
-                if (!fileText.EndsWith(";"))
-                {
-                    //ファイル末尾にセミコロンがない場合つける
-                    fileText += ";";
-                }
-                if (fileText.StartsWith("SET CLIENT_ENCODING TO ") || fileText.StartsWith("set client_encoding to "))
-                {
-                    //Encoding設定はコメント化する
-                    fileText = "--" + fileText;
-                }
-
-                sb.AppendLine(fileText);
-
+                Console.WriteLine(list[i].DeclaredFilePath);
+                sb.AppendLine(File.ReadAllText(list[i].DeclaredFilePath));
             }
 
-            string path = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? string.Empty, $"combinedfile{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.sql");
+            string path = System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), $"combinedfile{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.sql");
 
 
             File.WriteAllText(path, sb.ToString());
 
             return path;
         }
+
 
 
         private static List<DbObject> ReadSqlFile(string[] lines, string filePath)
@@ -120,6 +78,7 @@ namespace SqlDependencySorter
 
                 if (upperLine.Contains("CREATE ") || upperLine.Contains("OR REPLACE "))
                 {
+                    DbObjectTypes t = DbObjectTypes.View;
                     if (upperLine.Contains(" VIEW "))
                     {
                         const string TYPE_TEXT = " VIEW ";
@@ -163,7 +122,9 @@ namespace SqlDependencySorter
                         list.Add(new DbObject { ObjectType = DbObjectTypes.Trigger, Name = triggerName, DeclaredFilePath = filePath });
 
                     }
+
                 }
+
             }
 
             return list;

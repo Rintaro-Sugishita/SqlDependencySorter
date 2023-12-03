@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SqlDependencySorter
 {
-    public enum DbObjectTypes
+    internal enum DbObjectTypes
     {
         Table, View, Procedure, Function, Trigger
 

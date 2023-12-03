@@ -17,6 +17,8 @@ namespace SqlDependencySorter
 
         public bool RecursiveSearch { get; set; } = true;
 
+        public string ReadEncoding { get; set; } = "UTF-8";
+
         [JsonIgnore]
         public System.IO.SearchOption Option
         {
@@ -49,7 +51,7 @@ namespace SqlDependencySorter
         public static Setting Load()
         {
             var jsonText = File.ReadAllText(GetSavePath());
-            return System.Text.Json.JsonSerializer.Deserialize<Setting>(jsonText)?? new Setting();
+            return System.Text.Json.JsonSerializer.Deserialize<Setting>(jsonText);
 
 
         }
@@ -62,7 +64,7 @@ namespace SqlDependencySorter
 
         public static string GetSavePath()
         {
-            return System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)?? "", "setting.json");
+            return System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "setting.json");
         }
     }
 }
