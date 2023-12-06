@@ -76,7 +76,7 @@ namespace SqlDependencySorter
         public static string WriteFile(List<(string fileName, Encoding? encoding)> files, List<DbObject> list)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("SET CLIENT_ENCODING TO \"UTF-8\"");
+            sb.AppendLine("SET CLIENT_ENCODING TO \"UTF-8\";");
             for (int i = 0; i < list.Count; i++)
             {
                 var fileObj = files.First(x => x.fileName == list[i].DeclaredFilePath);
